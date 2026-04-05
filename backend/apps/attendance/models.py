@@ -2,16 +2,13 @@ from django.db import models
 import uuid
 
 
-# Create your models here.
 
-class Attendace(models.Model):
-    """
-    Registro de presença diária do estudante.
-    """
+class Attendance(models.Model):
+    #Registro diário de presença do estudante, garantindo que cada estudante tenha apenas um registro por dia.
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    student = models.ForeingKey(
+    student = models.ForeignKey(
         "students.Student",
         on_delete=models.CASCADE,
         related_name="attendances",
