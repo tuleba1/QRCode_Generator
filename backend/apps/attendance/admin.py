@@ -1,8 +1,8 @@
 from django.contrib import admin
-from .models import Attendace
+from .models import Attendance
 # Register your models here.
 
-@admin.register(Attendace)
+@admin.register(Attendance)
 
 # Administração personalizada para o modelo Attendance
 
