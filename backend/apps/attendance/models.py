@@ -1,3 +1,5 @@
+from time import timezone
+
 from django.db import models
 import uuid
 
@@ -32,3 +34,12 @@ class Attendance(models.Model):
 
         def __str__(self):
             return f"Presença de {self.student.name} em {self.date}"
+        
+
+class QRSession(models.Model):
+        token = models.UUIDField(default=uuid.uuid4, unique=True)
+        created_at = models.DateTimeField(auto_now_add=True)
+
+        def is_valid(self):
+            # Verificar se o token é válido (por exemplo, expira após 3 minutos)
+            return timezone.now() <= self.created_at + timezone.timedelta(minutes=3)

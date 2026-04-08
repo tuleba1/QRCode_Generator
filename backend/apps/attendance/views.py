@@ -1,15 +1,20 @@
+import base64
+
+from io import BytesIO
 from django.db import IntegrityError
 
 from django.shortcuts import render
 from datetime import date
+import qrcode
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status   
 
 
 from students.models import Student
-from .models import Attendance
+from .models import Attendance, QRSession
 from .serializers import AttendanceSerializer
+
 
 
 
@@ -56,3 +61,72 @@ class AttendanceScanView(APIView):
                 {"error": "Presença já registrada para este estudante hoje."},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+def checkin_page(request):
+    token = request.GET.get("session")
+
+    session = None
+
+    if token:
+        try:
+            session = QRSession.objects.get(token=token)
+        except QRSession.DoesNotExist:
+            session = None
+
+    if not session or not session.is_valid():
+        return render(request, "attendance/expired.html")
+
+    return render(request, "attendance/checkin.html", {
+        "session_token": token
+    })
+        
+def confirm_attendance(request):
+    if request.method == "POST":
+        name = request.POST.get("name")
+        token = request.POST.get("session")
+
+        try:
+            session = QRSession.objects.get(token=token)
+        except QRSession.DoesNotExist:
+            return render(request, "attendance/expired.html")
+
+        if not session.is_valid():
+            return render(request, "attendance/expired.html")
+
+        student = Student.objects.filter(name=name).first()
+
+        if not student:
+            return render(request, "attendance/error.html", {"msg": "Aluno não encontrado"})
+
+        today = date.today()
+
+        try:
+            Attendance.objects.create(student=student, date=today)
+
+            student.total_presences += 1
+            student.save()
+
+            return render(request, "attendance/success.html", {"student": student})
+
+        except IntegrityError:
+            return render(request, "attendance/already.html", {"student": student})
+        
+import base64
+
+def generate_qr_page(request):
+    session = QRSession.objects.create()
+
+    qr_data = f"http://192.168.101.2/attendance/checkin/?session={session.token}"
+
+    qr = qrcode.make(qr_data)
+
+    buffer = BytesIO()
+    qr.save(buffer, format="PNG")
+
+    # 👇 converter para base64 aqui
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+    return render(request, "attendance/generate_qr.html", {
+        "qr_image": qr_base64
+    })
+    
