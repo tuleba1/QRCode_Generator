@@ -1,6 +1,8 @@
 from django.db import models
 import uuid
-# Create your models here.
+import qrcode
+from io import BytesIO
+from django.core.files import File
 
 
 class Student(models.Model):
@@ -24,6 +26,8 @@ class Student(models.Model):
 
     update_at = models.DateTimeField(auto_now=True)  # Data da última atualização do registro
 
+    qr_code = models.ImageField(upload_to="qrcodes/", blank=True, null=True)
+
     class Meta:
         ordering = ['name']  # Ordenação padrão por nome do estudante
         verbose_name = "Estudante"
@@ -31,3 +35,23 @@ class Student(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.registration})" #Aba para nome completo do estudante e matrícula
+    
+    def save(self, *args, **kwargs):
+        creating= self._state.adding  # Verifica se o registro está sendo criado pela primeira vez
+
+        super().save(*args, **kwargs)  # Salva o registro para garantir que o ID e o QR token sejam gerados
+
+        if creating and not self.qr_code:
+            qr_data = qr_data = f"http://127.0.0.1:8000/attendance/checkin/?token={self.qr_token}"  #
+
+            qr = qrcode.make(qr_data)
+
+            buffer = BytesIO()
+            qr.save(buffer, format="PNG")
+
+            file_name = f"{self.registration}.png"
+
+            self.qr_code.save(file_name, File(buffer), save=False)
+
+            super().save(update_fields=["qr_code"])  # Salva apenas o campo do QR code para evitar loop infinito
+
