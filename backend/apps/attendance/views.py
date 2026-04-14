@@ -1,16 +1,13 @@
 import base64
+import qrcode
 
 from io import BytesIO
 from django.db import IntegrityError
-
 from django.shortcuts import render
 from datetime import date
-import qrcode
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status   
-
-
 from students.models import Student
 from .models import Attendance, QRSession
 from .serializers import AttendanceSerializer
@@ -114,19 +111,35 @@ def confirm_attendance(request):
 import base64
 
 def generate_qr_page(request):
+
     session = QRSession.objects.create()
 
-    qr_data = f"http://192.168.101.2/attendance/checkin/?session={session.token}"
 
-    qr = qrcode.make(qr_data)
+    qr_data = request.build_absolute_uri(
+        f"/attendance/checkin/?session={session.token}"
+    )
+
+
+    qr = qrcode.QRCode(
+        version=1,
+        box_size=12,
+        border=5
+    )
+
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+
 
     buffer = BytesIO()
-    qr.save(buffer, format="PNG")
+    img.save(buffer, format="PNG")
 
-    # 👇 converter para base64 aqui
     qr_base64 = base64.b64encode(buffer.getvalue()).decode()
 
+
     return render(request, "attendance/generate_qr.html", {
-        "qr_image": qr_base64
+        "qr_image": qr_base64,
+        "qr_url": qr_data  # 👈 útil pra debug
     })
     
