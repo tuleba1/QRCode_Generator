@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>QR Code de Presença</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 350px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        img {
+            margin: 20px 0;
+        }
+
+        .timer {
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #4caf50, #ff9800, #f44336);
+            transition: width 1s linear;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>QR Code de Presença</h1>
+
+    <img src="data:image/png;base64,{{ qr_image }}" width="250">
+
+    <div class="timer" id="timer">03:00</div>
+
+    <div class="progress-bar">
+        <div class="progress" id="progress"></div>
+    </div>
+</div>
+
+<script>
+    let totalTime = 180; // 3 minutos em segundos
+    let timeLeft = totalTime;
+
+    const timerElement = document.getElementById("timer");
+    const progressElement = document.getElementById("progress");
+
+    const countdown = setInterval(() => {
+        timeLeft--;
+
+        let minutes = Math.floor(timeLeft / 60);
+        let seconds = timeLeft % 60;
+
+        timerElement.textContent = 
+            String(minutes).padStart(2, '0') + ":" + 
+            String(seconds).padStart(2, '0');
+
+        let percentage = (timeLeft / totalTime) * 100;
+        progressElement.style.width = percentage + "%";
+
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+
+            // Atualiza a página automaticamente
+            location.reload();
+        }
+
+    }, 1000);
+</script>
+
+</body>
+</html>

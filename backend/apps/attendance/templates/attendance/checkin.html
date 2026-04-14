@@ -1,0 +1,11 @@
+<h1>Confirmar Presença</h1>
+
+<form method="post" action="/attendance/confirm/">
+    {% csrf_token %}
+    
+    <input type="hidden" name="session" value="{{ session_token }}">
+    
+    <input type="text" name="name" placeholder="Digite seu nome" required>
+
+    <button type="submit">Confirmar</button>
+</form>
